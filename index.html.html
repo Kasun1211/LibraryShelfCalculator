@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Library Shelf Capacity Calculator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f0f4f8;
+    }
+    .bg-primary { background-color: #0a2439; }
+    .text-primary { color: #0a2439; }
+    .border-primary { border-color: #0a2439; }
+    
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+  <div class="bg-white max-w-2xl w-full border-2 border-primary rounded-lg overflow-hidden shadow-2xl">
+    <div class="bg-primary p-6 text-white text-center border-b border-white border-opacity-10">
+        <h1 class="text-2xl font-bold tracking-tight uppercase">Library Shelf Capacity Calculator</h1>
+        <p class="text-xs opacity-70 mt-1 uppercase tracking-widest font-medium">Metric Dimensioning & Inventory Tool</p>
+    </div>
+
+    <div class="bg-slate-50 p-6 flex justify-between items-center border-b border-gray-200">
+      <div>
+        <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Total Span</h2>
+        <div class="text-4xl font-mono font-bold text-primary"><span id="totalMeters">0.000</span> <span class="text-xl font-normal">m</span></div>
+      </div>
+      <div class="text-right">
+        <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Est. Capacity</h2>
+        <div class="text-3xl font-mono font-bold text-blue-600"><span id="bookCount">0</span> <span class="text-lg font-normal">books</span></div>
+      </div>
+    </div>
+
+    <div class="p-6 space-y-4">
+      <div class="grid grid-cols-12 gap-4 px-2 text-xs font-bold text-gray-400 uppercase">
+        <div class="col-span-5 text-left">Shelf Width (mm)</div>
+        <div class="col-span-3 text-center">Qty of Shelves</div>
+        <div class="col-span-3 text-right">Subtotal (mm)</div>
+        <div class="col-span-1"></div>
+      </div>
+
+      <div id="rowsContainer" class="space-y-3 max-h-80 overflow-y-auto custom-scrollbar pr-2">
+        </div>
+
+      <div class="pt-4 space-y-4">
+        <div class="flex gap-3">
+            <button id="addRowBtn" class="flex-1 bg-primary text-white py-3 rounded-md font-semibold hover:bg-slate-800 transition flex items-center justify-center gap-2 shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+              </svg>
+              Add Shelf Row
+            </button>
+            <button id="resetBtn" class="px-6 py-3 border border-red-200 text-red-500 rounded-md font-semibold hover:bg-red-50 transition">
+              Reset
+            </button>
+        </div>
+        
+        <div class="bg-blue-50 p-3 rounded-md border border-blue-100">
+            <p class="text-[11px] text-blue-700 leading-tight">
+                <strong>Calculation Logic:</strong> Capacity is estimated using a standard <strong>22mm</strong> average book thickness. Total span is converted from millimeters to meters for facility planning.
+            </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const rowsContainer = document.getElementById('rowsContainer');
+    const totalMetersDisplay = document.getElementById('totalMeters');
+    const bookCountDisplay = document.getElementById('bookCount');
+    const addRowBtn = document.getElementById('addRowBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    // Updated dimensions based on your request
+    const dimensionsMm = [370, 575, 650, 750, 816, 886, 1025];
+    const quantities = [1, 2, 3, 4, 5, 6];
+    const BOOK_THICKNESS_MM = 22;
+
+    function createRow() {
+      const rowDiv = document.createElement('div');
+      rowDiv.className = "grid grid-cols-12 gap-4 items-center p-3 bg-white border border-gray-200 rounded-lg shadow-sm transition-all hover:border-blue-300";
+      
+      rowDiv.innerHTML = `
+        <div class="col-span-5">
+          <select class="val-select w-full p-2 bg-gray-50 border border-gray-200 rounded focus:ring-1 focus:ring-primary outline-none text-sm font-medium">
+            ${dimensionsMm.map(v => `<option value="${v}">${v} mm</option>`).join('')}
+          </select>
+        </div>
+        <div class="col-span-3">
+          <select class="mul-select w-full p-2 bg-gray-50 border border-gray-200 rounded focus:ring-1 focus:ring-primary outline-none text-sm text-center font-medium">
+            ${quantities.map(m => `<option value="${m}">${m}</option>`).join('')}
+          </select>
+        </div>
+        <div class="col-span-3 font-mono font-bold text-primary text-right px-2 row-result-mm">
+          0
+        </div>
+        <div class="col-span-1 text-right">
+          <button class="remove-btn text-gray-300 hover:text-red-500 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
+      `;
+
+      const valSelect = rowDiv.querySelector('.val-select');
+      const mulSelect = rowDiv.querySelector('.mul-select');
+      const removeBtn = rowDiv.querySelector('.remove-btn');
+
+      [valSelect, mulSelect].forEach(select => {
+        select.addEventListener('change', () => {
+          updateRowResult(rowDiv);
+          calculateFinals();
+        });
+      });
+
+      removeBtn.addEventListener('click', () => {
+        rowDiv.remove();
+        calculateFinals();
+      });
+
+      rowsContainer.appendChild(rowDiv);
+      updateRowResult(rowDiv);
+      calculateFinals();
+    }
+
+    function updateRowResult(row) {
+      const val = parseFloat(row.querySelector('.val-select').value);
+      const qty = parseFloat(row.querySelector('.mul-select').value);
+      row.querySelector('.row-result-mm').textContent = (val * qty).toFixed(0);
+    }
+
+    function calculateFinals() {
+      let totalMm = 0;
+      document.querySelectorAll('.row-result-mm').forEach(res => {
+        totalMm += parseFloat(res.textContent);
+      });
+
+      const totalMeters = totalMm / 1000;
+      totalMetersDisplay.textContent = totalMeters.toFixed(3);
+
+      const books = totalMm / BOOK_THICKNESS_MM;
+      bookCountDisplay.textContent = Math.floor(books).toLocaleString(); 
+    }
+
+    addRowBtn.addEventListener('click', createRow);
+    resetBtn.addEventListener('click', () => {
+      rowsContainer.innerHTML = '';
+      createRow();
+    });
+
+    createRow();
+  </script>
+</body>
+</html>
