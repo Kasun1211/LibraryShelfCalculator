@@ -17,12 +17,66 @@
     
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+    /* COMPACT PRINT STYLES */
+    @media print {
+      body { background-color: white; padding: 0; margin: 0; }
+      .no-print { display: none !important; }
+      .calculator-box { 
+        box-shadow: none !important; 
+        border: none !important; 
+        width: 100% !important; 
+        max-width: none !important; 
+        margin: 0 !important;
+      }
+      .bg-primary { 
+        background: transparent !important; 
+        color: black !important; 
+        padding: 10px 0 !important;
+        border-bottom: 2px solid black !important;
+        text-align: left !important;
+      }
+      .bg-primary h1 { font-size: 1.25rem !important; }
+      .bg-primary p { font-size: 0.75rem !important; color: black !important; }
+      
+      .bg-slate-50 { 
+        background: transparent !important; 
+        padding: 10px 0 !important; 
+        border-bottom: 1px dashed #ccc !important;
+      }
+      
+      #rowsContainer { 
+        max-height: none !important; 
+        overflow: visible !important; 
+      }
+      
+      /* Tightening Row Spacing */
+      .grid-row { 
+        padding: 4px 0 !important; 
+        margin-bottom: 0 !important;
+        border-bottom: 1px solid #eee !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      
+      select { 
+        appearance: none; 
+        border: none !important; 
+        background: transparent !important; 
+        font-weight: 500;
+        font-size: 0.875rem !important;
+        padding: 0 !important;
+      }
+      
+      .row-result-mm { font-size: 0.875rem !important; }
+      .grid { gap: 8px !important; }
+    }
   </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
 
-  <div class="bg-white max-w-2xl w-full border-2 border-primary rounded-lg overflow-hidden shadow-2xl">
-    <div class="bg-primary p-6 text-white text-center border-b border-white border-opacity-10">
+  <div class="calculator-box bg-white max-w-2xl w-full border-2 border-primary rounded-lg overflow-hidden shadow-2xl">
+    <div class="bg-primary p-6 text-white text-center">
         <h1 class="text-2xl font-bold tracking-tight uppercase">Library Shelf Capacity Calculator</h1>
         <p class="text-xs opacity-70 mt-1 uppercase tracking-widest font-medium">Metric Dimensioning & Inventory Tool</p>
     </div>
@@ -41,32 +95,32 @@
     <div class="p-6 space-y-4">
       <div class="grid grid-cols-12 gap-4 px-2 text-xs font-bold text-gray-400 uppercase">
         <div class="col-span-5 text-left">Shelf Width (mm)</div>
-        <div class="col-span-3 text-center">Qty of Shelves</div>
+        <div class="col-span-3 text-center">Qty</div>
         <div class="col-span-3 text-right">Subtotal (mm)</div>
-        <div class="col-span-1"></div>
+        <div class="col-span-1 no-print"></div>
       </div>
 
-      <div id="rowsContainer" class="space-y-3 max-h-80 overflow-y-auto custom-scrollbar pr-2">
+      <div id="rowsContainer" class="space-y-3 max-h-80 overflow-y-auto custom-scrollbar pr-2 print:space-y-0">
         </div>
 
-      <div class="pt-4 space-y-4">
-        <div class="flex gap-3">
-            <button id="addRowBtn" class="flex-1 bg-primary text-white py-3 rounded-md font-semibold hover:bg-slate-800 transition flex items-center justify-center gap-2 shadow-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-              </svg>
-              Add Shelf Row
+      <div class="pt-4 space-y-4 no-print">
+        <div class="flex flex-wrap gap-3">
+            <button id="addRowBtn" class="flex-1 bg-primary text-white py-3 rounded-md font-semibold hover:bg-slate-800 transition flex items-center justify-center gap-2">
+              Add Row
+            </button>
+            <button id="printBtn" class="px-6 py-3 bg-green-600 text-white rounded-md font-semibold hover:bg-green-700 transition flex items-center gap-2">
+              Print Report
             </button>
             <button id="resetBtn" class="px-6 py-3 border border-red-200 text-red-500 rounded-md font-semibold hover:bg-red-50 transition">
               Reset
             </button>
         </div>
-        
-        <div class="bg-blue-50 p-3 rounded-md border border-blue-100">
-            <p class="text-[11px] text-blue-700 leading-tight">
-                <strong>Calculation Logic:</strong> Capacity is estimated using a standard <strong>21mm</strong> average book thickness. Total span is converted from millimeters to meters for facility planning.
-            </p>
-        </div>
+      </div>
+
+      <div class="bg-blue-50 p-3 rounded-md border border-blue-100 mt-4 print:bg-white print:border-none print:mt-2">
+          <p class="text-[11px] text-blue-700 leading-tight print:text-black">
+              <strong>Note:</strong> Capacity based on 22mm book thickness. Total span in meters.
+          </p>
       </div>
     </div>
   </div>
@@ -77,35 +131,33 @@
     const bookCountDisplay = document.getElementById('bookCount');
     const addRowBtn = document.getElementById('addRowBtn');
     const resetBtn = document.getElementById('resetBtn');
+    const printBtn = document.getElementById('printBtn');
 
-    // Updated dimensions based on your request
     const dimensionsMm = [370, 575, 650, 750, 816, 886, 1025];
-    const quantities = [1, 2, 3, 4, 5, 6];
-    const BOOK_THICKNESS_MM = 21;
+    const quantities = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    const BOOK_THICKNESS_MM = 22;
 
     function createRow() {
       const rowDiv = document.createElement('div');
-      rowDiv.className = "grid grid-cols-12 gap-4 items-center p-3 bg-white border border-gray-200 rounded-lg shadow-sm transition-all hover:border-blue-300";
+      rowDiv.className = "grid-row grid grid-cols-12 gap-4 items-center p-3 bg-white border border-gray-200 rounded-lg shadow-sm";
       
       rowDiv.innerHTML = `
         <div class="col-span-5">
-          <select class="val-select w-full p-2 bg-gray-50 border border-gray-200 rounded focus:ring-1 focus:ring-primary outline-none text-sm font-medium">
+          <select class="val-select w-full p-2 bg-gray-50 border border-gray-200 rounded text-sm font-medium">
             ${dimensionsMm.map(v => `<option value="${v}">${v} mm</option>`).join('')}
           </select>
         </div>
         <div class="col-span-3">
-          <select class="mul-select w-full p-2 bg-gray-50 border border-gray-200 rounded focus:ring-1 focus:ring-primary outline-none text-sm text-center font-medium">
+          <select class="mul-select w-full p-2 bg-gray-50 border border-gray-200 rounded text-sm text-center font-medium">
             ${quantities.map(m => `<option value="${m}">${m}</option>`).join('')}
           </select>
         </div>
         <div class="col-span-3 font-mono font-bold text-primary text-right px-2 row-result-mm">
           0
         </div>
-        <div class="col-span-1 text-right">
+        <div class="col-span-1 text-right no-print">
           <button class="remove-btn text-gray-300 hover:text-red-500 transition">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
           </button>
         </div>
       `;
@@ -142,19 +194,13 @@
       document.querySelectorAll('.row-result-mm').forEach(res => {
         totalMm += parseFloat(res.textContent);
       });
-
-      const totalMeters = totalMm / 1000;
-      totalMetersDisplay.textContent = totalMeters.toFixed(3);
-
-      const books = totalMm / BOOK_THICKNESS_MM;
-      bookCountDisplay.textContent = Math.floor(books).toLocaleString(); 
+      totalMetersDisplay.textContent = (totalMm / 1000).toFixed(3);
+      bookCountDisplay.textContent = Math.floor(totalMm / BOOK_THICKNESS_MM).toLocaleString(); 
     }
 
     addRowBtn.addEventListener('click', createRow);
-    resetBtn.addEventListener('click', () => {
-      rowsContainer.innerHTML = '';
-      createRow();
-    });
+    resetBtn.addEventListener('click', () => { rowsContainer.innerHTML = ''; createRow(); });
+    printBtn.addEventListener('click', () => { window.print(); });
 
     createRow();
   </script>
