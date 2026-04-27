@@ -18,7 +18,6 @@
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 
-    /* COMPACT PRINT STYLES */
     @media print {
       body { background-color: white; padding: 0; margin: 0; }
       .no-print { display: none !important; }
@@ -87,7 +86,8 @@
 
     <div class="p-6 space-y-4">
       <div class="grid grid-cols-12 gap-4 px-2 text-xs font-bold text-gray-400 uppercase">
-        <div class="col-span-5 text-left">Shelf Width (mm)</div>
+        <div class="col-span-1 text-center">#</div>
+        <div class="col-span-4 text-left">Shelf Width (mm)</div>
         <div class="col-span-3 text-center">Qty</div>
         <div class="col-span-3 text-right">Subtotal (mm)</div>
         <div class="col-span-1 no-print"></div>
@@ -106,7 +106,7 @@
             </tr>
           </thead>
           <tbody id="summaryTableBody">
-            </tbody>
+          </tbody>
         </table>
       </div>
 
@@ -145,12 +145,21 @@
     const quantities = [1, 2, 3, 4, 5, 6, 7, 8];
     const BOOK_THICKNESS_MM = 21;
 
+    function updateRowNumbers() {
+      document.querySelectorAll('.row-number').forEach((span, index) => {
+        span.textContent = index + 1;
+      });
+    }
+
     function createRow() {
       const rowDiv = document.createElement('div');
       rowDiv.className = "grid-row grid grid-cols-12 gap-4 items-center p-3 bg-white border border-gray-200 rounded-lg shadow-sm";
       
       rowDiv.innerHTML = `
-        <div class="col-span-5">
+        <div class="col-span-1 text-center font-bold text-gray-400 text-sm row-number">
+          1
+        </div>
+        <div class="col-span-4">
           <select class="val-select w-full p-2 bg-gray-50 border border-gray-200 rounded text-sm font-medium">
             ${dimensionsMm.map(v => `<option value="${v}">${v} mm</option>`).join('')}
           </select>
@@ -183,10 +192,12 @@
 
       removeBtn.addEventListener('click', () => {
         rowDiv.remove();
+        updateRowNumbers();
         calculateFinals();
       });
 
       rowsContainer.appendChild(rowDiv);
+      updateRowNumbers();
       updateRowResult(rowDiv);
       calculateFinals();
     }
@@ -200,38 +211,27 @@
     function calculateFinals() {
       let totalMm = 0;
       let inventory = {};
-
-      // Initialize inventory with 0 for all possible dimensions
       dimensionsMm.forEach(d => inventory[d] = 0);
 
       document.querySelectorAll('.grid-row').forEach(row => {
         const val = row.querySelector('.val-select').value;
         const qty = parseInt(row.querySelector('.mul-select').value);
-        const subtotal = parseFloat(row.querySelector('.row-result-mm').textContent);
-        
-        totalMm += subtotal;
+        totalMm += parseFloat(row.querySelector('.row-result-mm').textContent);
         inventory[val] += qty;
       });
 
-      // Update Displays
       totalMetersDisplay.textContent = (totalMm / 1000).toFixed(3);
       bookCountDisplay.textContent = Math.floor(totalMm / BOOK_THICKNESS_MM).toLocaleString(); 
 
-      // Update Summary Table
       summaryTableBody.innerHTML = '';
       Object.keys(inventory).forEach(size => {
         if (inventory[size] > 0) {
           const tr = document.createElement('tr');
           tr.className = "border-b border-gray-100";
-          tr.innerHTML = `
-            <td class="py-1 font-medium">${size} mm Shelf</td>
-            <td class="py-1 text-right font-bold">${inventory[size]}</td>
-          `;
+          tr.innerHTML = `<td class="py-1 font-medium">${size} mm Shelf</td><td class="py-1 text-right font-bold">${inventory[size]}</td>`;
           summaryTableBody.appendChild(tr);
         }
       });
-      
-      // Hide summary header if empty
       document.getElementById('summarySection').style.display = totalMm > 0 ? 'block' : 'none';
     }
 
