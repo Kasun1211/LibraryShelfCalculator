@@ -32,7 +32,7 @@
       .bg-primary { 
         background: transparent !important; 
         color: black !important; 
-        padding: 10px 0 !important;
+        padding: 5px 0 !important;
         border-bottom: 2px solid black !important;
         text-align: left !important;
       }
@@ -45,18 +45,12 @@
         border-bottom: 1px dashed #ccc !important;
       }
       
-      #rowsContainer { 
-        max-height: none !important; 
-        overflow: visible !important; 
-      }
+      #rowsContainer { max-height: none !important; overflow: visible !important; }
       
-      /* Tightening Row Spacing */
       .grid-row { 
-        padding: 4px 0 !important; 
-        margin-bottom: 0 !important;
+        padding: 2px 0 !important; 
         border-bottom: 1px solid #eee !important;
         background: transparent !important;
-        box-shadow: none !important;
       }
       
       select { 
@@ -69,7 +63,6 @@
       }
       
       .row-result-mm { font-size: 0.875rem !important; }
-      .grid { gap: 8px !important; }
     }
   </style>
 </head>
@@ -100,8 +93,22 @@
         <div class="col-span-1 no-print"></div>
       </div>
 
-      <div id="rowsContainer" class="space-y-3 max-h-80 overflow-y-auto custom-scrollbar pr-2 print:space-y-0">
-        </div>
+      <div id="rowsContainer" class="space-y-2 max-h-80 overflow-y-auto custom-scrollbar pr-2 print:space-y-0">
+      </div>
+
+      <div id="summarySection" class="mt-6 border-t pt-4">
+        <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Shelf Inventory Summary</h3>
+        <table class="w-full text-sm border-collapse">
+          <thead>
+            <tr class="border-b border-gray-300 text-left">
+              <th class="py-1">Shelf Size</th>
+              <th class="py-1 text-right">Total Quantity Used</th>
+            </tr>
+          </thead>
+          <tbody id="summaryTableBody">
+            </tbody>
+        </table>
+      </div>
 
       <div class="pt-4 space-y-4 no-print">
         <div class="flex flex-wrap gap-3">
@@ -119,7 +126,7 @@
 
       <div class="bg-blue-50 p-3 rounded-md border border-blue-100 mt-4 print:bg-white print:border-none print:mt-2">
           <p class="text-[11px] text-blue-700 leading-tight print:text-black">
-              <strong>Note:</strong> Capacity based on 21mm book thickness. Total span in meters.
+              <strong>Note:</strong> Capacity based on 21mm book thickness.
           </p>
       </div>
     </div>
@@ -129,12 +136,13 @@
     const rowsContainer = document.getElementById('rowsContainer');
     const totalMetersDisplay = document.getElementById('totalMeters');
     const bookCountDisplay = document.getElementById('bookCount');
+    const summaryTableBody = document.getElementById('summaryTableBody');
     const addRowBtn = document.getElementById('addRowBtn');
     const resetBtn = document.getElementById('resetBtn');
     const printBtn = document.getElementById('printBtn');
 
     const dimensionsMm = [370, 575, 650, 750, 816, 886, 1025];
-    const quantities = [1, 2, 3, 4, 5, 6, 7,8 ];
+    const quantities = [1, 2, 3, 4, 5, 6, 7, 8];
     const BOOK_THICKNESS_MM = 21;
 
     function createRow() {
@@ -191,11 +199,40 @@
 
     function calculateFinals() {
       let totalMm = 0;
-      document.querySelectorAll('.row-result-mm').forEach(res => {
-        totalMm += parseFloat(res.textContent);
+      let inventory = {};
+
+      // Initialize inventory with 0 for all possible dimensions
+      dimensionsMm.forEach(d => inventory[d] = 0);
+
+      document.querySelectorAll('.grid-row').forEach(row => {
+        const val = row.querySelector('.val-select').value;
+        const qty = parseInt(row.querySelector('.mul-select').value);
+        const subtotal = parseFloat(row.querySelector('.row-result-mm').textContent);
+        
+        totalMm += subtotal;
+        inventory[val] += qty;
       });
+
+      // Update Displays
       totalMetersDisplay.textContent = (totalMm / 1000).toFixed(3);
       bookCountDisplay.textContent = Math.floor(totalMm / BOOK_THICKNESS_MM).toLocaleString(); 
+
+      // Update Summary Table
+      summaryTableBody.innerHTML = '';
+      Object.keys(inventory).forEach(size => {
+        if (inventory[size] > 0) {
+          const tr = document.createElement('tr');
+          tr.className = "border-b border-gray-100";
+          tr.innerHTML = `
+            <td class="py-1 font-medium">${size} mm Shelf</td>
+            <td class="py-1 text-right font-bold">${inventory[size]}</td>
+          `;
+          summaryTableBody.appendChild(tr);
+        }
+      });
+      
+      // Hide summary header if empty
+      document.getElementById('summarySection').style.display = totalMm > 0 ? 'block' : 'none';
     }
 
     addRowBtn.addEventListener('click', createRow);
