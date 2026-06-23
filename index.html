@@ -35,8 +35,8 @@
         border-bottom: 2px solid black !important;
         text-align: left !important;
       }
-      .bg-primary h1 { font-size: 1.25rem !important; }
-      .bg-primary p { font-size: 0.75rem !important; color: black !important; }
+      .bg-primary h1 { font-size: 1.5rem !important; color: black !important; }
+      .bg-primary p { font-size: 0.75rem !important; color: #475569 !important; }
       
       .bg-slate-50 { 
         background: transparent !important; 
@@ -62,6 +62,15 @@
       }
       
       .row-result-mm { font-size: 0.875rem !important; }
+      
+      /* Styles to seamless print the input value */
+      .print-input-bridge {
+        border: none !important;
+        padding: 0 !important;
+        background: transparent !important;
+        font-size: 1.125rem !important;
+        font-weight: 700 !important;
+      }
     }
   </style>
 </head>
@@ -71,6 +80,17 @@
     <div class="bg-primary p-6 text-white text-center">
         <h1 class="text-2xl font-bold tracking-tight uppercase">Library Shelf Capacity Calculator</h1>
         <p class="text-xs opacity-70 mt-1 uppercase tracking-widest font-medium">Metric Dimensioning & Inventory Tool</p>
+    </div>
+
+    <div class="bg-white px-6 pt-5 pb-3 border-b border-gray-100 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+      <div class="sm:col-span-2">
+        <label for="reportTitle" class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Document Title / Reference</label>
+        <input type="text" id="reportTitle" class="print-input-bridge w-full px-3 py-2 border border-gray-200 rounded text-sm font-semibold text-primary focus:outline-none focus:border-blue-500 placeholder-gray-300" placeholder="e.g., Ground Floor West Wing Refit">
+      </div>
+      <div class="text-left sm:text-right">
+        <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Date Generated</span>
+        <span id="reportDate" class="text-sm font-mono font-medium text-gray-600 block py-2 sm:py-0"></span>
+      </div>
     </div>
 
     <div class="bg-slate-50 p-6 flex justify-between items-center border-b border-gray-200">
@@ -140,10 +160,19 @@
     const addRowBtn = document.getElementById('addRowBtn');
     const resetBtn = document.getElementById('resetBtn');
     const printBtn = document.getElementById('printBtn');
+    const reportDate = document.getElementById('reportDate');
 
     const dimensionsMm = [370, 575, 650, 750, 816, 886, 1025];
     const quantities = [1, 2, 3, 4, 5, 6, 7, 8];
     const BOOK_THICKNESS_MM = 21;
+
+    // Set the current report date automatically
+    const today = new Date();
+    reportDate.textContent = today.toLocaleDateString('en-GB', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
 
     function updateRowNumbers() {
       document.querySelectorAll('.row-number').forEach((span, index) => {
@@ -229,7 +258,7 @@
           const tr = document.createElement('tr');
           tr.className = "border-b border-gray-100";
           tr.innerHTML = `<td class="py-1 font-medium">${size} mm Shelf</td><td class="py-1 text-right font-bold">${inventory[size]}</td>`;
-          summaryTableBody.appendChild(tr);
+          tr.summaryTableBody = summaryTableBody.appendChild(tr);
         }
       });
       document.getElementById('summarySection').style.display = totalMm > 0 ? 'block' : 'none';
